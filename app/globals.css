@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Couleurs reprises du site vitrine (shives-site/index.html).
+   Mode sombre : automatique selon le téléphone, ou forcé avec data-theme="dark" / "light" sur <html>. */
+:root {
+  --bg: #F5F6F9; --surface: #FFFFFF; --ink: #141A26; --muted: #5B6676; --line: #E1E6EE;
+  --blue: #1F4FC9; --blue-deep: #163A99; --on-blue: #FFFFFF; --blue-soft: #E7EDFB;
+  --sun: #F2A93B; --sun-ink: #141A26;
+  --night: #0F1420; --on-night: #E9EDF5; --night-muted: #98A3B7;
+  --cuisine: #A65A16; --cuisine-bg: #FBEEDF; --salle: #2A64A6; --salle-bg: #E5EFFA; --plonge: #3F7363; --plonge-bg: #E3F1EC;
+  --ok: #2B7A4B; --ok-bg: #E3F3E9; --bad: #B63D0E; --bad-bg: #FCE7DE;
+  --shadow: 0 24px 60px rgba(20, 30, 60, .12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E131A; --surface: #161D27; --ink: #E6EBF2; --muted: #9AA5B4; --line: #283241;
+    --blue: #86A7FF; --blue-deep: #1C2C57; --on-blue: #0E131A; --blue-soft: #1C294A;
+    --night: #0A0E14; --on-night: #E9EDF5; --night-muted: #98A3B7;
+    --cuisine: #F2AE6E; --cuisine-bg: #38240F; --salle: #93BBEC; --salle-bg: #15283E; --plonge: #8FC7B4; --plonge-bg: #132D26;
+    --ok: #72CF97; --ok-bg: #11291C; --bad: #F39470; --bad-bg: #3A1C10; --shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E131A; --surface: #161D27; --ink: #E6EBF2; --muted: #9AA5B4; --line: #283241;
+  --blue: #86A7FF; --blue-deep: #1C2C57; --on-blue: #0E131A; --blue-soft: #1C294A;
+  --night: #0A0E14; --on-night: #E9EDF5; --night-muted: #98A3B7;
+  --cuisine: #F2AE6E; --cuisine-bg: #38240F; --salle: #93BBEC; --salle-bg: #15283E; --plonge: #8FC7B4; --plonge-bg: #132D26;
+  --ok: #72CF97; --ok-bg: #11291C; --bad: #F39470; --bad-bg: #3A1C10; --shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+
+/* Rend ces couleurs utilisables en classes Tailwind : bg-surface, text-ink, text-cuisine, bg-salle-bg… */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-blue: var(--blue);
+  --color-blue-deep: var(--blue-deep);
+  --color-on-blue: var(--on-blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-sun: var(--sun);
+  --color-sun-ink: var(--sun-ink);
+  --color-night: var(--night);
+  --color-on-night: var(--on-night);
+  --color-night-muted: var(--night-muted);
+  --color-cuisine: var(--cuisine);
+  --color-cuisine-bg: var(--cuisine-bg);
+  --color-salle: var(--salle);
+  --color-salle-bg: var(--salle-bg);
+  --color-plonge: var(--plonge);
+  --color-plonge-bg: var(--plonge-bg);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --shadow-card: var(--shadow);
+  --font-display: var(--font-bricolage), "Avenir Next", system-ui, sans-serif;
+  --font-sans: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -.02em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
