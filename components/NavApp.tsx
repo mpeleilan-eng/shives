@@ -7,6 +7,7 @@ const LIENS = [
   { href: "/app", label: "Accueil" },
   { href: "/app/planning", label: "Planning" },
   { href: "/app/demandes", label: "Demandes" },
+  { href: "/app/historique", label: "Historique" },
   { href: "/app/equipe", label: "Équipe" },
   { href: "/app/besoins", label: "Besoins" },
   { href: "/app/restaurant", label: "Restaurant" },

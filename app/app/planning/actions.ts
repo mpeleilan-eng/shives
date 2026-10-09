@@ -115,3 +115,45 @@ export async function publierSemaine(dateLundi: string, publier: boolean): Promi
   revalidatePath(`/app/planning/${dateLundi}`);
   return {};
 }
+
+/**
+ * Duplique une semaine : copie ses créneaux vers une autre semaine (en brouillon).
+ * Les anciens employés (retirés de l'équipe) ne sont pas recopiés.
+ */
+export async function dupliquerSemaine(source: string, cible: string): Promise<EtatGeneration & { cible?: string }> {
+  if (!estLundi(source) || !estLundi(cible) || source === cible) return { erreur: "Semaines invalides." };
+  const { supabase } = await getPatron();
+  const restaurant = await getRestaurant();
+  if (!restaurant) redirect("/app/restaurant");
+
+  const { data: semaines } = await supabase
+    .from("semaines").select("id, date_lundi, seed").eq("restaurant_id", restaurant.id).in("date_lundi", [source, cible]);
+  const origine = semaines?.find((s) => s.date_lundi === source);
+  if (!origine) return { erreur: "La semaine à copier n'existe pas." };
+
+  const [{ data: lignes }, { data: actifs }] = await Promise.all([
+    supabase.from("creneaux").select("employe_id, jour, service, poste, debut, fin").eq("semaine_id", origine.id),
+    supabase.from("employes").select("id").eq("restaurant_id", restaurant.id).eq("actif", true),
+  ]);
+  const idsActifs = new Set((actifs ?? []).map((e) => e.id));
+  const copies = (lignes ?? []).filter((c) => idsActifs.has(c.employe_id));
+
+  const { data: dest, error: errSemaine } = await supabase
+    .from("semaines")
+    .upsert({ restaurant_id: restaurant.id, date_lundi: cible, seed: origine.seed, statut: "brouillon" }, { onConflict: "restaurant_id,date_lundi" })
+    .select("id").single();
+  if (errSemaine || !dest) return { erreur: "Copie impossible. Réessaie." };
+
+  const { error: errSuppr } = await supabase.from("creneaux").delete().eq("semaine_id", dest.id);
+  const { error: errAjout } = copies.length
+    ? await supabase.from("creneaux").insert(copies.map((c) => ({ ...c, semaine_id: dest.id })))
+    : { error: null };
+  if (errSuppr || errAjout) {
+    console.error("dupliquerSemaine:", errSuppr?.message, errAjout?.message);
+    return { erreur: "Copie impossible. Réessaie." };
+  }
+
+  revalidatePath(`/app/planning/${cible}`);
+  revalidatePath("/app/historique");
+  return { cible };
+}

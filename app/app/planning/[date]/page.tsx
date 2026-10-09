@@ -11,6 +11,7 @@ import { EditeurPlanning } from "@/components/planning/EditeurPlanning";
 import { PartageEquipe } from "@/components/Partage";
 import { BoutonsGeneration } from "../BoutonsGeneration";
 import { BoutonPublier } from "../BoutonPublier";
+import { CopierDepuis, DupliquerVers } from "../CopierSemaine";
 
 export const metadata: Metadata = { title: "Planning · Shives" };
 
@@ -22,8 +23,9 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");
 
-  const [{ data: semaine }, { data: besoins }, { data: tousEmployes }] = await Promise.all([
+  const [{ data: semaine }, { data: autresSemaines }, { data: besoins }, { data: tousEmployes }] = await Promise.all([
     supabase.from("semaines").select("id, seed, statut").eq("restaurant_id", restaurant.id).eq("date_lundi", date).maybeSingle(),
+    supabase.from("semaines").select("date_lundi").eq("restaurant_id", restaurant.id).neq("date_lundi", date).order("date_lundi", { ascending: false }).limit(12),
     supabase.from("besoins").select("jour, service, cuisine, salle, plonge, ouvert").eq("restaurant_id", restaurant.id),
     supabase.from("employes").select("*").eq("restaurant_id", restaurant.id).order("created_at"),
   ]);
@@ -42,6 +44,8 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
   const nbManques = semaine
     ? calculerEtat(creneaux, (besoins ?? []) as BesoinJour[], employes, regles).alertes.filter((a) => a.niveau === "manque").length
     : 0;
+  const semainesExistantes = (autresSemaines ?? []).map((s) => s.date_lundi as string);
+  const suivante = ajouterJours(date, 7);
   const lignesEnvoi = employes
     .filter((e) => e.actif)
     .map((e) => ({ id: e.id, nom: e.nom, telephone: e.telephone, lien: lienEmploye(e.token_acces) }));
@@ -73,6 +77,7 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
             Shives répartit ton équipe selon les besoins de chaque service, les contrats, les repos et les indisponibilités.
           </p>
           <BoutonsGeneration dateLundi={date} existe={false} />
+          <CopierDepuis cible={date} semaines={semainesExistantes} />
         </div>
       ) : (
         <>
@@ -110,7 +115,10 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
             <span className="text-xs text-muted">Proposition n° {semaine.seed}</span>
-            <BoutonsGeneration dateLundi={date} existe />
+            <div className="flex flex-wrap gap-2">
+              <DupliquerVers source={date} cible={suivante} cibleExiste={semainesExistantes.includes(suivante)} />
+              <BoutonsGeneration dateLundi={date} existe />
+            </div>
           </div>
         </>
       )}
