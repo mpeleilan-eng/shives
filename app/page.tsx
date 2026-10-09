@@ -72,6 +72,7 @@ export default function Home() {
             <a className="hide-m" href="#comment">Comment ça marche</a>
             <a className="hide-m" href="#tarifs">Tarifs</a>
             <a className="hide-m" href="#faq">FAQ</a>
+            <a href="/connexion">Se connecter</a>
             <a className="btn primary small" href="#demo">Demander une démo</a>
           </nav>
         </div>

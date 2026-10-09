@@ -1,0 +1,42 @@
+// Types partagés, calqués sur les tables Supabase (supabase/migrations).
+
+export type ServiceKey = "midi" | "soir";
+export type Poste = "cuisine" | "salle" | "plonge";
+export type PosteEmploye = Poste | "polyvalent";
+
+export const SERVICES: ServiceKey[] = ["midi", "soir"];
+export const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+export const JOURS_COURTS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+export const NOM_SERVICE: Record<ServiceKey, string> = { midi: "Midi", soir: "Soir" };
+
+export type Horaires = { start: string; end: string };
+export type Services = Record<ServiceKey, Horaires>;
+
+export type Regles = {
+  maxJours: number;
+  maxHeuresJour: number;
+  reposMin: number;
+  completerContrats: boolean;
+};
+
+export type Restaurant = {
+  id: string;
+  owner_id: string;
+  nom: string;
+  services: Services;
+  regles: Regles;
+  abonnement: "essai" | "solo" | "equipe" | "inactif";
+  stripe_customer_id: string | null;
+  created_at: string;
+};
+
+export type Besoin = {
+  id: string;
+  restaurant_id: string;
+  jour: number;
+  service: ServiceKey;
+  cuisine: number;
+  salle: number;
+  plonge: number;
+  ouvert: boolean;
+};
