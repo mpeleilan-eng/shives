@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 
 const LIENS = [
   { href: "/app", label: "Accueil" },
@@ -14,9 +15,21 @@ const LIENS = [
   { href: "/app/abonnement", label: "Abonnement" },
 ];
 
-/** Onglets de l'espace patron. L'onglet de la page en cours est souligné. */
+// Vrai dans le navigateur, faux pendant le rendu serveur et la première hydratation
+const rienAEcouter = () => () => {};
+function useDansLeNavigateur() {
+  return useSyncExternalStore(rienAEcouter, () => true, () => false);
+}
+
+/**
+ * Onglets de l'espace patron. L'onglet de la page en cours est souligné.
+ * L'onglet actif n'est calculé que dans le navigateur : après une redirection, l'adresse vue par
+ * le serveur peut différer de celle du navigateur (sinon erreur d'hydratation React).
+ */
 export function NavApp({ demandesEnAttente = 0 }: { demandesEnAttente?: number }) {
-  const chemin = usePathname();
+  const navigateur = useDansLeNavigateur();
+  const cheminActuel = usePathname();
+  const chemin = navigateur ? cheminActuel : "";
   return (
     <nav aria-label="Espace patron" className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2">
       {LIENS.map((l) => {
