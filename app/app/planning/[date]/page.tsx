@@ -4,10 +4,9 @@ import { notFound, redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { ajouterJours, estLundi, lundiProchain, titreSemaine } from "@/lib/dates";
 import { reglesCompletes } from "@/lib/besoins";
-import { calculerEtat, type BesoinJour, type Creneau } from "@/lib/planning";
+import type { BesoinJour, Creneau } from "@/lib/planning";
 import type { Employe } from "@/lib/types";
-import { GrillePlanning } from "@/components/planning/GrillePlanning";
-import { ListeAlertes } from "@/components/planning/ListeAlertes";
+import { EditeurPlanning } from "@/components/planning/EditeurPlanning";
 import { BoutonsGeneration } from "../BoutonsGeneration";
 
 export const metadata: Metadata = { title: "Planning · Shives" };
@@ -34,8 +33,7 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
 
   // Équipe actuelle + anciens employés encore présents dans ce planning
   const employes = ((tousEmployes ?? []) as Employe[]).filter((e) => e.actif || creneaux.some((c) => c.employe_id === e.id));
-  const etat = calculerEtat(creneaux, (besoins ?? []) as BesoinJour[], employes, reglesCompletes(restaurant.regles));
-  const nbManques = etat.alertes.filter((a) => a.niveau === "manque").length;
+  const regles = reglesCompletes(restaurant.regles);
   const prochaine = lundiProchain();
 
   return (
@@ -68,18 +66,20 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className={`rounded-full px-3 py-1 text-sm font-bold ${nbManques ? "bg-bad-bg text-bad" : "bg-ok-bg text-ok"}`}>
-              {nbManques ? `${nbManques} ${nbManques > 1 ? "manques" : "manque"}` : "Effectifs complets"}
-            </span>
+          <EditeurPlanning
+            // une nouvelle proposition remet l'éditeur à zéro
+            key={semaine.seed}
+            dateLundi={date}
+            employes={employes}
+            creneauxInitiaux={creneaux}
+            besoins={(besoins ?? []) as BesoinJour[]}
+            regles={regles}
+            services={restaurant.services}
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <span className="text-xs text-muted">Proposition n° {semaine.seed}</span>
             <BoutonsGeneration dateLundi={date} existe />
           </div>
-          <GrillePlanning dateLundi={date} employes={employes} creneaux={creneaux} etat={etat} services={restaurant.services} />
-          <section className="flex flex-col gap-2">
-            <h2 className="text-xl font-bold">Alertes</h2>
-            <ListeAlertes alertes={etat.alertes} />
-          </section>
-          <p className="m-0 text-xs text-muted">Proposition n° {semaine.seed}</p>
         </>
       )}
     </div>

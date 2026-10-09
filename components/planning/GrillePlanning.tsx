@@ -10,10 +10,13 @@ type Props = {
   creneaux: Creneau[];
   etat: EtatPlanning;
   services: Services;
+  /** Si fourni, chaque case devient un bouton (ajustement à la main). */
+  onCellule?: (employeId: string, jour: number) => void;
+  selection?: { employeId: string; jour: number } | null;
 };
 
 /** Tableau employés × jours, avec les effectifs de chaque service en haut. */
-export function GrillePlanning({ dateLundi, employes, creneaux, etat, services }: Props) {
+export function GrillePlanning({ dateLundi, employes, creneaux, etat, services, onCellule, selection }: Props) {
   return (
     <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
       <table className="w-full min-w-[640px] border-separate border-spacing-1 tabular-nums">
@@ -73,9 +76,7 @@ export function GrillePlanning({ dateLundi, employes, creneaux, etat, services }
                     .filter((c) => c.employe_id === e.id && c.jour === j)
                     .sort((a, b) => a.debut.localeCompare(b.debut));
                   const indispo = e.indispos.includes(j);
-                  return (
-                    <td key={j} className="align-middle">
-                      {siens.length ? (
+                  const contenu = siens.length ? (
                         <div className="flex flex-col gap-0.5">
                           {siens.map((c) => {
                             const decale = c.debut !== services[c.service].start || c.fin !== services[c.service].end;
@@ -96,7 +97,20 @@ export function GrillePlanning({ dateLundi, employes, creneaux, etat, services }
                           className={`block h-6 rounded-md border-2 border-dashed border-line ${indispo ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,var(--line)_4px,var(--line)_6px)]" : ""}`}
                           title={indispo ? "Indisponible" : "Repos"}
                         />
-                      )}
+                      );
+                  const choisie = selection?.employeId === e.id && selection.jour === j;
+                  return (
+                    <td key={j} className="align-middle">
+                      {onCellule ? (
+                        <button
+                          type="button"
+                          onClick={() => onCellule(e.id, j)}
+                          aria-label={`${e.nom}, ${JOURS_COURTS[j]} : modifier`}
+                          className={`block w-full cursor-pointer rounded-lg p-0.5 ${choisie ? "outline-3 outline-blue" : "hover:outline-2 hover:outline-line"}`}
+                        >
+                          {contenu}
+                        </button>
+                      ) : contenu}
                     </td>
                   );
                 })}

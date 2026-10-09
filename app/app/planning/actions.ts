@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { estLundi } from "@/lib/dates";
 import { reglesCompletes } from "@/lib/besoins";
-import { genererCreneaux, type BesoinJour } from "@/lib/planning";
-import type { Employe } from "@/lib/types";
+import { creneauxJournee, genererCreneaux, type BesoinJour, type ChoixJournee } from "@/lib/planning";
+import { POSTES, SERVICES, type Employe } from "@/lib/types";
 
 export type EtatGeneration = { erreur?: string };
 
@@ -52,6 +52,44 @@ export async function genererSemaine(dateLundi: string, autreProposition: boolea
   if (errSuppr || errAjout) {
     console.error("creneaux:", errSuppr?.message, errAjout?.message);
     return { erreur: "Le planning n'a pas pu être enregistré. Réessaie." };
+  }
+
+  revalidatePath(`/app/planning/${dateLundi}`);
+  return {};
+}
+
+/**
+ * Ajustement à la main : fixe la journée d'un employé (aucun, midi, soir ou les deux services).
+ * La RLS vérifie que la semaine et l'employé appartiennent bien au restaurant du patron.
+ */
+export async function modifierJournee(
+  dateLundi: string, employeId: string, jour: number, choix: ChoixJournee,
+): Promise<EtatGeneration> {
+  const choixValide =
+    Array.isArray(choix) && choix.length <= SERVICES.length &&
+    choix.every((c) => SERVICES.includes(c?.service) && POSTES.includes(c?.poste)) &&
+    new Set(choix.map((c) => c.service)).size === choix.length;
+  if (!estLundi(dateLundi) || !Number.isInteger(jour) || jour < 0 || jour > 6 || !choixValide || typeof employeId !== "string") {
+    return { erreur: "Modification invalide." };
+  }
+
+  const { supabase } = await getPatron();
+  const restaurant = await getRestaurant();
+  if (!restaurant) redirect("/app/restaurant");
+
+  const { data: semaine } = await supabase
+    .from("semaines").select("id").eq("restaurant_id", restaurant.id).eq("date_lundi", dateLundi).maybeSingle();
+  if (!semaine) return { erreur: "Génère d'abord la semaine." };
+
+  const nouveaux = creneauxJournee(employeId, jour, choix, restaurant.services, reglesCompletes(restaurant.regles).pauseMinutes);
+  const { error: errSuppr } = await supabase.from("creneaux").delete()
+    .eq("semaine_id", semaine.id).eq("employe_id", employeId).eq("jour", jour);
+  const { error: errAjout } = nouveaux.length
+    ? await supabase.from("creneaux").insert(nouveaux.map((c) => ({ ...c, semaine_id: semaine.id })))
+    : { error: null };
+  if (errSuppr || errAjout) {
+    console.error("modifierJournee:", errSuppr?.message, errAjout?.message);
+    return { erreur: "La modification n'a pas été enregistrée. Réessaie." };
   }
 
   revalidatePath(`/app/planning/${dateLundi}`);

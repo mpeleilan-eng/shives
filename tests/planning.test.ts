@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { appliquerPause, calculerEtat, construireConfig, genererCreneaux, texteManque, type BesoinJour, type Creneau } from "@/lib/planning";
+import {
+  appliquerPause, calculerEtat, construireConfig, creneauxJournee, genererCreneaux, remplacerJournee, texteManque,
+  type BesoinJour, type Creneau,
+} from "@/lib/planning";
 import { ajouterJours, estLundi, lundiDe, lundiProchain, titreSemaine } from "@/lib/dates";
 import { REGLES_PAR_DEFAUT, type Employe, type Services } from "@/lib/types";
 
@@ -71,6 +74,30 @@ describe("genererCreneaux + calculerEtat", () => {
     const textes = calculerEtat(tom, besoins, employes, regles).alertes.map((a) => a.texte);
     expect(textes).toContain("Tom n'est pas disponible le samedi");
     expect(textes.some((t) => t.startsWith("Tom n'a que 8 h de repos"))).toBe(true);
+  });
+});
+
+describe("ajustement à la main", () => {
+  it("fabrique la journée choisie avec la pause, et la remplace dans le planning", () => {
+    const journee = creneauxJournee("Léa", 2, [{ service: "soir", poste: "cuisine" }, { service: "midi", poste: "cuisine" }], services, 30);
+    expect(journee).toEqual([
+      { employe_id: "Léa", jour: 2, service: "midi", poste: "cuisine", debut: "12:00", fin: "16:00" },
+      { employe_id: "Léa", jour: 2, service: "soir", poste: "cuisine", debut: "16:30", fin: "23:00" },
+    ]);
+    const avant: Creneau[] = [
+      { employe_id: "Léa", jour: 2, service: "soir", poste: "cuisine", debut: "16:00", fin: "23:00" },
+      { employe_id: "Tom", jour: 2, service: "soir", poste: "salle", debut: "16:00", fin: "23:00" },
+    ];
+    expect(remplacerJournee(avant, "Léa", 2, journee)).toHaveLength(3);
+    expect(remplacerJournee(avant, "Léa", 2, [])).toEqual([avant[1]]);
+  });
+
+  it("recalcule les alertes après retrait", () => {
+    const tout = genererCreneaux(services, besoins, employes, regles, 3);
+    const premier = tout[0];
+    const sans = remplacerJournee(tout, premier.employe_id, premier.jour, []);
+    const avant = calculerEtat(tout, besoins, employes, regles).effectifs[premier.jour][premier.service].present;
+    expect(calculerEtat(sans, besoins, employes, regles).effectifs[premier.jour][premier.service].present).toBe(avant - 1);
   });
 });
 

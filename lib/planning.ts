@@ -76,6 +76,25 @@ export function genererCreneaux(
   return appliquerPause(creneaux, regles.pauseMinutes);
 }
 
+/** Choix fait à la main pour une case (un employé, un jour) : quels services, à quel poste. */
+export type ChoixJournee = { service: ServiceKey; poste: Poste }[];
+
+/** Fabrique les créneaux d'une journée choisie à la main (horaires du service + pause). */
+export function creneauxJournee(
+  employeId: string, jour: number, choix: ChoixJournee, services: Services, pauseMinutes: number,
+): Creneau[] {
+  const bruts = SERVICES.flatMap((s) => {
+    const c = choix.find((x) => x.service === s);
+    return c ? [{ employe_id: employeId, jour, service: s, poste: c.poste, debut: services[s].start, fin: services[s].end }] : [];
+  });
+  return appliquerPause(bruts, pauseMinutes);
+}
+
+/** Remplace la journée d'un employé dans la liste de créneaux. */
+export function remplacerJournee(creneaux: Creneau[], employeId: string, jour: number, nouveaux: Creneau[]): Creneau[] {
+  return [...creneaux.filter((c) => !(c.employe_id === employeId && c.jour === jour)), ...nouveaux];
+}
+
 // ───────────────────────── 3) Effectifs et alertes ─────────────────────────
 
 export type Alerte = { niveau: "manque" | "regle" | "info"; texte: string };
