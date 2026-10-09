@@ -137,8 +137,9 @@ Carte de test : `4242 4242 4242 4242`, une date future, n'importe quel CVC.
 
 ## Avant d'accueillir de vrais clients
 
-- [ ] Brancher un service d'e-mails (ex. Resend) dans Supabase → Authentication → SMTP : l'envoi gratuit de Supabase est limité à quelques e-mails par heure.
-- [ ] Puis personnaliser le modèle d'e-mail « Magic Link » (lien qui marche sur tous les téléphones, avec `token_hash`).
+- [x] Service d'e-mails branché (Brevo, SMTP dans Supabase → Authentication → Emails).
+- [x] Modèles « Magic Link » et « Confirm signup » personnalisés : lien `token_hash` (marche sur tous les téléphones) + code à 6 chiffres.
+- [ ] Vérifier que les e-mails n'arrivent pas en spam (idéalement : envoyer depuis un nom de domaine à toi, avec SPF/DKIM).
 - [ ] Activer le compte Stripe et passer aux clés **live** (nouvelles variables + nouveau webhook).
 - [ ] Mentions légales, CGV et politique de confidentialité (RGPD : numéros de téléphone des employés).
 - [ ] Nom de domaine (ex. `shives.fr`) dans Vercel.
