@@ -17,7 +17,20 @@ export type Regles = {
   maxHeuresJour: number;
   reposMin: number;
   completerContrats: boolean;
+  /** Pause (en minutes) pour qui fait midi + soir le même jour. Gérée autour du moteur, pas dedans. */
+  pauseMinutes: number;
 };
+
+export const REGLES_PAR_DEFAUT: Regles = {
+  maxJours: 5,
+  maxHeuresJour: 11,
+  reposMin: 11,
+  completerContrats: true,
+  pauseMinutes: 30,
+};
+
+export const PAUSES_POSSIBLES = [0, 20, 30, 60];
+export const POSTES: Poste[] = ["cuisine", "salle", "plonge"];
 
 export type Restaurant = {
   id: string;
