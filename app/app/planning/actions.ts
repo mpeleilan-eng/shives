@@ -95,3 +95,23 @@ export async function modifierJournee(
   revalidatePath(`/app/planning/${dateLundi}`);
   return {};
 }
+
+/** Publie la semaine (visible par l'équipe sur leurs liens) ou la repasse en brouillon. */
+export async function publierSemaine(dateLundi: string, publier: boolean): Promise<EtatGeneration> {
+  if (!estLundi(dateLundi)) return { erreur: "Semaine invalide." };
+  const { supabase } = await getPatron();
+  const restaurant = await getRestaurant();
+  if (!restaurant) redirect("/app/restaurant");
+
+  const { error } = await supabase
+    .from("semaines")
+    .update({ statut: publier ? "publiee" : "brouillon" })
+    .eq("restaurant_id", restaurant.id)
+    .eq("date_lundi", dateLundi);
+  if (error) {
+    console.error("publierSemaine:", error.message);
+    return { erreur: "Impossible de changer la publication. Réessaie." };
+  }
+  revalidatePath(`/app/planning/${dateLundi}`);
+  return {};
+}

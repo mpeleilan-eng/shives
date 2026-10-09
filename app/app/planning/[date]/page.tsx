@@ -4,10 +4,13 @@ import { notFound, redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { ajouterJours, estLundi, lundiProchain, titreSemaine } from "@/lib/dates";
 import { reglesCompletes } from "@/lib/besoins";
-import type { BesoinJour, Creneau } from "@/lib/planning";
+import { calculerEtat, type BesoinJour, type Creneau } from "@/lib/planning";
+import { lienEmploye } from "@/lib/partage";
 import type { Employe } from "@/lib/types";
 import { EditeurPlanning } from "@/components/planning/EditeurPlanning";
+import { PartageEquipe } from "@/components/Partage";
 import { BoutonsGeneration } from "../BoutonsGeneration";
+import { BoutonPublier } from "../BoutonPublier";
 
 export const metadata: Metadata = { title: "Planning · Shives" };
 
@@ -35,6 +38,13 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
   const employes = ((tousEmployes ?? []) as Employe[]).filter((e) => e.actif || creneaux.some((c) => c.employe_id === e.id));
   const regles = reglesCompletes(restaurant.regles);
   const prochaine = lundiProchain();
+  const publiee = semaine?.statut === "publiee";
+  const nbManques = semaine
+    ? calculerEtat(creneaux, (besoins ?? []) as BesoinJour[], employes, regles).alertes.filter((a) => a.niveau === "manque").length
+    : 0;
+  const lignesEnvoi = employes
+    .filter((e) => e.actif)
+    .map((e) => ({ id: e.id, nom: e.nom, telephone: e.telephone, lien: lienEmploye(e.token_acces) }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -66,6 +76,28 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
         </div>
       ) : (
         <>
+          {/* Publication */}
+          <div className={`flex flex-col gap-3 rounded-[18px] p-4 ${publiee ? "bg-ok-bg" : "border border-line bg-surface"}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className={`font-bold ${publiee ? "text-ok" : ""}`}>{publiee ? "✓ Publiée" : "Brouillon"}</span>
+                <p className="m-0 text-sm text-muted">
+                  {publiee
+                    ? "L'équipe voit cette semaine sur son lien. Tes modifications apparaissent tout de suite."
+                    : "Seul toi vois ce planning. Publie-le quand il te convient."}
+                </p>
+              </div>
+              <BoutonPublier dateLundi={date} publiee={publiee} nbManques={nbManques} />
+            </div>
+            {publiee && (
+              <details className="rounded-xl bg-surface px-4 py-3">
+                <summary className="cursor-pointer font-bold">Prévenir l&apos;équipe ({lignesEnvoi.length})</summary>
+                <p className="mb-3 mt-1 text-sm text-muted">Chacun reçoit son lien personnel : il voit son planning sur son téléphone, sans appli ni compte.</p>
+                <PartageEquipe restaurant={restaurant.nom} lignes={lignesEnvoi} />
+              </details>
+            )}
+          </div>
+
           <EditeurPlanning
             // une nouvelle proposition remet l'éditeur à zéro
             key={semaine.seed}
