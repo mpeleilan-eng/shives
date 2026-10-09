@@ -1,4 +1,5 @@
 import { Logo } from "@/components/Logo";
+import { NavApp } from "@/components/NavApp";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { deconnexion } from "@/app/connexion/actions";
 
@@ -21,6 +22,7 @@ export default async function LayoutApp({ children }: LayoutProps<"/app">) {
             </button>
           </form>
         </div>
+        {restaurant && <NavApp />}
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-16">{children}</main>
     </div>

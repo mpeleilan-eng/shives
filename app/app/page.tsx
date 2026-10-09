@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Accueil · Shives" };
 
 const RACCOURCIS = [
   { href: "/app/restaurant", titre: "Mon restaurant", texte: "Nom, horaires, jours d'ouverture", pret: true },
-  { href: "/app/equipe", titre: "Équipe", texte: "Ajoute tes employés et leurs contrats", pret: false },
+  { href: "/app/equipe", titre: "Équipe", texte: "Ajoute tes employés et leurs contrats", pret: true },
   { href: "/app/besoins", titre: "Besoins et règles", texte: "Combien de personnes à chaque service", pret: false },
   { href: "/app/planning", titre: "Générer la semaine", texte: "Le planning en un clic", pret: false },
 ];

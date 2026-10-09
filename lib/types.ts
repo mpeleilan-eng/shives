@@ -30,6 +30,27 @@ export type Restaurant = {
   created_at: string;
 };
 
+export const POSTES_EMPLOYE: PosteEmploye[] = ["cuisine", "salle", "plonge", "polyvalent"];
+export const NOM_POSTE: Record<PosteEmploye, string> = {
+  cuisine: "Cuisine",
+  salle: "Salle",
+  plonge: "Plonge",
+  polyvalent: "Polyvalent",
+};
+
+export type Employe = {
+  id: string;
+  restaurant_id: string;
+  nom: string;
+  poste: PosteEmploye;
+  contrat_heures: number;
+  telephone: string;
+  indispos: number[];
+  token_acces: string;
+  actif: boolean;
+  created_at: string;
+};
+
 export type Besoin = {
   id: string;
   restaurant_id: string;

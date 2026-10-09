@@ -1,0 +1,44 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { getPatron, getRestaurant } from "@/lib/session";
+import { verifierEmploye } from "@/lib/employe";
+
+export type EtatEmploye = { erreur?: string };
+
+async function restaurantOuAccueil() {
+  const restaurant = await getRestaurant();
+  if (!restaurant) redirect("/app/restaurant");
+  return restaurant;
+}
+
+/** Ajoute (id absent) ou modifie (id présent) un employé. La RLS garantit qu'il appartient au restaurant du patron. */
+export async function enregistrerEmploye(id: string | null, _: EtatEmploye, form: FormData): Promise<EtatEmploye> {
+  const verif = verifierEmploye(form);
+  if (!verif.ok) return { erreur: verif.erreur };
+
+  const { supabase } = await getPatron();
+  const restaurant = await restaurantOuAccueil();
+
+  const { error } = id
+    ? await supabase.from("employes").update(verif.infos).eq("id", id).eq("restaurant_id", restaurant.id)
+    : await supabase.from("employes").insert({ ...verif.infos, restaurant_id: restaurant.id });
+  if (error) {
+    console.error("employes:", error.message);
+    return { erreur: "Enregistrement impossible. Réessaie." };
+  }
+
+  revalidatePath("/app/equipe");
+  redirect(`/app/equipe?ok=${encodeURIComponent(verif.infos.nom)}`);
+}
+
+/** Retire (actif = false) ou réactive un employé. On ne supprime jamais : l'historique des plannings reste intact. */
+export async function changerActif(id: string, actif: boolean) {
+  const { supabase } = await getPatron();
+  const restaurant = await restaurantOuAccueil();
+  const { error } = await supabase.from("employes").update({ actif }).eq("id", id).eq("restaurant_id", restaurant.id);
+  if (error) console.error("employes actif:", error.message);
+  revalidatePath("/app/equipe");
+  redirect("/app/equipe");
+}
