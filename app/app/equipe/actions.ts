@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { verifierEmploye } from "@/lib/employe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { maxEmployes } from "@/lib/abonnement";
+import type { Restaurant } from "@/lib/types";
 
 export type EtatEmploye = { erreur?: string };
 
@@ -14,6 +16,14 @@ async function restaurantOuAccueil() {
   return restaurant;
 }
 
+/** Limite de salariés actifs selon l'offre (Solo : 8, Équipe : 20). */
+async function resteDeLaPlace(restaurant: Restaurant) {
+  const { supabase } = await getPatron();
+  const { count } = await supabase.from("employes").select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurant.id).eq("actif", true);
+  return (count ?? 0) < maxEmployes(restaurant.abonnement);
+}
+
 /** Ajoute (id absent) ou modifie (id présent) un employé. La RLS garantit qu'il appartient au restaurant du patron. */
 export async function enregistrerEmploye(id: string | null, _: EtatEmploye, form: FormData): Promise<EtatEmploye> {
   const verif = verifierEmploye(form);
@@ -21,6 +31,9 @@ export async function enregistrerEmploye(id: string | null, _: EtatEmploye, form
 
   const { supabase } = await getPatron();
   const restaurant = await restaurantOuAccueil();
+  if (!id && !(await resteDeLaPlace(restaurant))) {
+    return { erreur: `Ton offre va jusqu'à ${maxEmployes(restaurant.abonnement)} salariés. Passe à l'offre Équipe dans Abonnement.` };
+  }
 
   const { error } = id
     ? await supabase.from("employes").update(verif.infos).eq("id", id).eq("restaurant_id", restaurant.id)
@@ -38,6 +51,7 @@ export async function enregistrerEmploye(id: string | null, _: EtatEmploye, form
 export async function changerActif(id: string, actif: boolean) {
   const { supabase } = await getPatron();
   const restaurant = await restaurantOuAccueil();
+  if (actif && !(await resteDeLaPlace(restaurant))) redirect("/app/equipe?limite=1");
   const { error } = await supabase.from("employes").update({ actif }).eq("id", id).eq("restaurant_id", restaurant.id);
   if (error) console.error("employes actif:", error.message);
   revalidatePath("/app/equipe");

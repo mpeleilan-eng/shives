@@ -12,6 +12,8 @@ import { PartageEquipe } from "@/components/Partage";
 import { BoutonsGeneration } from "../BoutonsGeneration";
 import { BoutonPublier } from "../BoutonPublier";
 import { CopierDepuis, DupliquerVers } from "../CopierSemaine";
+import { abonnementActif } from "@/lib/abonnement";
+import { styleBouton } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Planning · Shives" };
 
@@ -92,7 +94,11 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
                     : "Seul toi vois ce planning. Publie-le quand il te convient."}
                 </p>
               </div>
-              <BoutonPublier dateLundi={date} publiee={publiee} nbManques={nbManques} />
+              {publiee || abonnementActif(restaurant.abonnement) ? (
+                <BoutonPublier dateLundi={date} publiee={publiee} nbManques={nbManques} />
+              ) : (
+                <Link href="/app/abonnement" className={styleBouton.primaire}>Publier : 1er mois offert</Link>
+              )}
             </div>
             {publiee && (
               <details className="rounded-xl bg-surface px-4 py-3">

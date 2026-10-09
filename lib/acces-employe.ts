@@ -18,12 +18,12 @@ export async function employeParToken(token: string) {
     .eq("actif", true)
     .maybeSingle();
   if (!employe) return null;
-  const { data: restaurant } = await admin.from("restaurants").select("id, nom, services").eq("id", employe.restaurant_id).single();
+  const { data: restaurant } = await admin.from("restaurants").select("id, nom, services, abonnement").eq("id", employe.restaurant_id).single();
   if (!restaurant) return null;
   return {
     admin,
     employe: employe as Omit<Employe, "token_acces" | "created_at">,
-    restaurant: restaurant as Pick<Restaurant, "id" | "nom" | "services">,
+    restaurant: restaurant as Pick<Restaurant, "id" | "nom" | "services" | "abonnement">,
   };
 }
 

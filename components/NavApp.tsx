@@ -11,6 +11,7 @@ const LIENS = [
   { href: "/app/equipe", label: "Équipe" },
   { href: "/app/besoins", label: "Besoins" },
   { href: "/app/restaurant", label: "Restaurant" },
+  { href: "/app/abonnement", label: "Abonnement" },
 ];
 
 /** Onglets de l'espace patron. L'onglet de la page en cours est souligné. */

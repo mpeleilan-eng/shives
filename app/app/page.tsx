@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
+import { abonnementActif } from "@/lib/abonnement";
 import { Message } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Accueil · Shives" };
@@ -24,6 +25,12 @@ export default async function Accueil({ searchParams }: PageProps<"/app">) {
     <div className="flex flex-col gap-5">
       <h1 className="text-3xl font-extrabold sm:text-4xl">Bonjour 👋</h1>
       {bienvenue && <Message type="ok">{restaurant.nom} est créé. Prochaine étape : ton équipe.</Message>}
+      {!abonnementActif(restaurant.abonnement) && (
+        <Link href="/app/abonnement" className="flex items-center justify-between gap-3 rounded-[18px] bg-blue-soft px-5 py-4 font-bold text-blue no-underline">
+          <span>{restaurant.abonnement === "inactif" ? "Ton abonnement est arrêté : réactive-le pour publier" : "Publie tes plannings : ton 1er mois est offert"}</span>
+          <span aria-hidden="true">→</span>
+        </Link>
+      )}
       {(enAttente ?? 0) > 0 && (
         <Link href="/app/demandes" className="flex items-center justify-between gap-3 rounded-[18px] bg-bad-bg px-5 py-4 font-bold text-bad no-underline">
           <span>{enAttente} {enAttente === 1 ? "absence à traiter" : "absences à traiter"}</span>

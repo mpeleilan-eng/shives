@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { estLundi } from "@/lib/dates";
+import { abonnementActif, maxEmployes } from "@/lib/abonnement";
 import { reglesCompletes } from "@/lib/besoins";
 import { creneauxJournee, genererCreneaux, type BesoinJour, type ChoixJournee } from "@/lib/planning";
 import { POSTES, SERVICES, type Employe } from "@/lib/types";
@@ -102,6 +103,16 @@ export async function publierSemaine(dateLundi: string, publier: boolean): Promi
   const { supabase } = await getPatron();
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");
+  if (publier && !abonnementActif(restaurant.abonnement)) {
+    return { erreur: "Pour publier, choisis une offre dans Abonnement (le premier mois est offert)." };
+  }
+  if (publier) {
+    const { count } = await supabase.from("employes").select("id", { count: "exact", head: true })
+      .eq("restaurant_id", restaurant.id).eq("actif", true);
+    if ((count ?? 0) > maxEmployes(restaurant.abonnement)) {
+      return { erreur: `Ton offre va jusqu'à ${maxEmployes(restaurant.abonnement)} salariés et tu en as ${count}. Passe à l'offre Équipe ou retire quelqu'un de l'équipe.` };
+    }
+  }
 
   const { error } = await supabase
     .from("semaines")

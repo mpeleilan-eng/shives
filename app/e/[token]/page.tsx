@@ -6,6 +6,7 @@ import { formatHeures } from "@/lib/employe";
 import { toMin } from "@/lib/planning-engine";
 import { JOURS, NOM_POSTE, NOM_SERVICE } from "@/lib/types";
 import { COULEUR_POSTE } from "@/components/Poste";
+import { abonnementActif } from "@/lib/abonnement";
 import { BoutonAbsence } from "./BoutonAbsence";
 
 // Page privée : jamais indexée, jamais mise en cache, aucun lien qui transmettrait l'adresse
@@ -21,8 +22,9 @@ export default async function PlanningEmploye({ params }: PageProps<"/e/[token]"
   if (!acces) notFound();
 
   const aujourdhui = aujourdhuiParis();
-  const semaines = await semainesPubliees(acces, lundiDe(aujourdhui));
   const { employe, restaurant } = acces;
+  // Abonnement du restaurant arrêté : plus de planning visible
+  const semaines = abonnementActif(restaurant.abonnement) ? await semainesPubliees(acces, lundiDe(aujourdhui)) : [];
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">

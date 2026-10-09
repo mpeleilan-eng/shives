@@ -35,7 +35,7 @@ export default async function PageEquipe({ searchParams }: PageProps<"/app/equip
   const { supabase } = await getPatron();
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");
-  const { ok } = await searchParams;
+  const { ok, limite } = await searchParams;
 
   const { data } = await supabase.from("employes").select("*").eq("restaurant_id", restaurant.id).order("nom");
   const employes = (data ?? []) as Employe[];
@@ -58,6 +58,11 @@ export default async function PageEquipe({ searchParams }: PageProps<"/app/equip
       </div>
 
       {typeof ok === "string" && <Message type="ok">C&apos;est enregistré pour {ok}.</Message>}
+      {limite && (
+        <Message type="erreur">
+          Ton offre est complète. <Link href="/app/abonnement" className="font-bold underline">Passe à l&apos;offre Équipe</Link> pour ajouter du monde.
+        </Message>
+      )}
 
       {actifs.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-[22px] border-2 border-dashed border-line px-5 py-10 text-center">

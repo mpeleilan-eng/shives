@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { employeParToken } from "@/lib/acces-employe";
 import { ajouterJours, aujourdhuiParis } from "@/lib/dates";
+import { abonnementActif } from "@/lib/abonnement";
 
 /**
  * POST /api/employe/absence : « Je ne peux pas venir », depuis le lien personnel de l'employé.
@@ -15,6 +16,9 @@ export async function POST(request: Request) {
   const acces = await employeParToken(token);
   if (!acces) return NextResponse.json({ erreur: "Ce lien ne marche plus." }, { status: 403 });
   const { admin, employe, restaurant } = acces;
+  if (!abonnementActif(restaurant.abonnement)) {
+    return NextResponse.json({ erreur: "Le planning n'est pas disponible pour le moment." }, { status: 403 });
+  }
 
   const { data: creneau } = await admin
     .from("creneaux")
