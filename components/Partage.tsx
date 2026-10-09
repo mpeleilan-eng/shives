@@ -22,7 +22,9 @@ export function BoutonCopier({ texte, label = "Copier le lien", className = "" }
   );
 }
 
-export function BoutonWhatsApp({ telephone, message, className = "" }: { telephone: string; message: string; className?: string }) {
+export function BoutonWhatsApp({ telephone, message, label = "WhatsApp", className = "" }: {
+  telephone: string; message: string; label?: string; className?: string;
+}) {
   return (
     <a
       href={lienWhatsApp(telephone, message)}
@@ -30,7 +32,7 @@ export function BoutonWhatsApp({ telephone, message, className = "" }: { telepho
       rel="noopener noreferrer"
       className={`${styleBouton.primaire} bg-[#1F7A4D]! text-white! px-3.5! py-2! text-sm! ${className}`}
     >
-      WhatsApp
+      {label}
     </a>
   );
 }

@@ -186,3 +186,55 @@ export function calculerEtat(creneaux: Creneau[], besoins: BesoinJour[], employe
   alertes.sort((a, b) => ordre[a.niveau] - ordre[b.niveau]);
   return { effectifs, minutesParEmploye, alertes };
 }
+
+// ───────────────────────── 4) Remplaçants ─────────────────────────
+
+export type Remplacant = {
+  employe: Employe;
+  /** Heures restantes au contrat cette semaine (en minutes, peut être négatif) */
+  minutesRestantes: number;
+  /** Règles qui ne seraient plus respectées s'il prend ce service */
+  problemes: string[];
+};
+
+/**
+ * Qui peut remplacer `absentId` sur ce service ? Même poste (ou polyvalent), disponible ce jour-là,
+ * pas déjà sur ce service. Tri : d'abord ceux qui respectent toutes les règles, puis le plus d'heures restantes au contrat.
+ */
+export function remplacantsPossibles(
+  cible: { jour: number; service: ServiceKey; poste: Poste },
+  absentId: string,
+  creneaux: Creneau[],
+  employes: Employe[],
+  besoins: BesoinJour[],
+  regles: Regles,
+  services: Services,
+): Remplacant[] {
+  const sansAbsent = creneaux.filter((c) => !(c.employe_id === absentId && c.jour === cible.jour && c.service === cible.service));
+  const avant = calculerEtat(sansAbsent, besoins, employes, regles);
+
+  return employes
+    .filter((e) =>
+      e.actif && e.id !== absentId &&
+      (e.poste === cible.poste || e.poste === "polyvalent") &&
+      !e.indispos.includes(cible.jour) &&
+      !sansAbsent.some((c) => c.employe_id === e.id && c.jour === cible.jour && c.service === cible.service))
+    .map((e) => {
+      const saJournee: ChoixJournee = sansAbsent
+        .filter((c) => c.employe_id === e.id && c.jour === cible.jour)
+        .map((c) => ({ service: c.service, poste: c.poste }));
+      const apres = remplacerJournee(sansAbsent, e.id, cible.jour,
+        creneauxJournee(e.id, cible.jour, [...saJournee, { service: cible.service, poste: cible.poste }], services, regles.pauseMinutes));
+      const etatApres = calculerEtat(apres, besoins, employes, regles);
+      const dejaLa = new Set(avant.alertes.map((a) => a.texte));
+      const problemes = etatApres.alertes
+        .filter((a) => a.niveau === "regle" && a.texte.startsWith(e.nom) && !dejaLa.has(a.texte))
+        .map((a) => a.texte);
+      return {
+        employe: e,
+        minutesRestantes: Number(e.contrat_heures) * 60 - (avant.minutesParEmploye[e.id] ?? 0),
+        problemes,
+      };
+    })
+    .sort((a, b) => (a.problemes.length > 0 ? 1 : 0) - (b.problemes.length > 0 ? 1 : 0) || b.minutesRestantes - a.minutesRestantes);
+}

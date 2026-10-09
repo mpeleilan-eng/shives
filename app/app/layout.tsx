@@ -5,8 +5,12 @@ import { deconnexion } from "@/app/connexion/actions";
 
 // Cadre de l'espace patron : en-tête + contenu centré, pensé téléphone d'abord.
 export default async function LayoutApp({ children }: LayoutProps<"/app">) {
-  const { user } = await getPatron();
+  const { user, supabase } = await getPatron();
   const restaurant = await getRestaurant();
+  // Badge rouge sur l'onglet Demandes (la RLS ne compte que celles du patron)
+  const { count: demandesEnAttente } = restaurant
+    ? await supabase.from("demandes").select("id", { count: "exact", head: true }).eq("statut", "en_attente")
+    : { count: 0 };
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -22,7 +26,7 @@ export default async function LayoutApp({ children }: LayoutProps<"/app">) {
             </button>
           </form>
         </div>
-        {restaurant && <NavApp />}
+        {restaurant && <NavApp demandesEnAttente={demandesEnAttente ?? 0} />}
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-16">{children}</main>
     </div>

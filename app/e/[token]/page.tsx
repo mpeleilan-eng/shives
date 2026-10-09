@@ -6,6 +6,7 @@ import { formatHeures } from "@/lib/employe";
 import { toMin } from "@/lib/planning-engine";
 import { JOURS, NOM_POSTE, NOM_SERVICE } from "@/lib/types";
 import { COULEUR_POSTE } from "@/components/Poste";
+import { BoutonAbsence } from "./BoutonAbsence";
 
 // Page privée : jamais indexée, jamais mise en cache, aucun lien qui transmettrait l'adresse
 export const metadata: Metadata = {
@@ -51,33 +52,49 @@ export default async function PlanningEmploye({ params }: PageProps<"/e/[token]"
               {JOURS.map((nomJour, j) => {
                 const date = ajouterJours(s.date_lundi, j);
                 const siens = s.creneaux.filter((c) => c.jour === j).sort((a, b) => a.debut.localeCompare(b.debut));
+                // Absences acceptées : le service n'est plus dans son planning
+                const liberes = s.demandes.filter((d) => d.jour === j && d.statut === "acceptee" && !siens.some((c) => c.id === d.creneau_id));
                 const estAujourdhui = date === aujourdhui;
                 const passe = date < aujourdhui;
                 return (
                   <li
                     key={j}
-                    className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${estAujourdhui ? "border-blue border-2 bg-surface" : "border-line bg-surface"} ${passe ? "opacity-50" : ""}`}
+                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${estAujourdhui ? "border-blue border-2 bg-surface" : "border-line bg-surface"} ${passe ? "opacity-50" : ""}`}
                   >
-                    <div className="w-14 shrink-0">
+                    <div className="w-14 shrink-0 pt-1">
                       <span className="block text-sm font-bold">{nomJour.slice(0, 3)}.</span>
                       <span className="block font-display text-2xl font-extrabold leading-none">{numeroDuJour(s.date_lundi, j)}</span>
                     </div>
-                    {siens.length ? (
-                      <div className="flex flex-1 flex-col gap-1">
-                        {siens.map((c) => (
-                          <div key={c.service} className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 ${COULEUR_POSTE[c.poste]}`}>
-                            <span className="font-bold">{NOM_SERVICE[c.service]}</span>
-                            <span className="text-sm font-semibold tabular-nums">{c.debut.replace(":", "h")} – {c.fin.replace(":", "h")}</span>
+                    <div className="flex flex-1 flex-col gap-2">
+                      {siens.map((c) => {
+                        const demande = [...s.demandes].reverse().find((d) => d.creneau_id === c.id);
+                        return (
+                          <div key={c.service} className="flex flex-col gap-1.5">
+                            <div className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 ${COULEUR_POSTE[c.poste]}`}>
+                              <span className="font-bold">
+                                {NOM_SERVICE[c.service]}
+                                {c.poste !== employe.poste && <span className="font-semibold"> · {NOM_POSTE[c.poste]}</span>}
+                              </span>
+                              <span className="text-sm font-semibold tabular-nums">{c.debut.replace(":", "h")} – {c.fin.replace(":", "h")}</span>
+                            </div>
+                            {demande?.statut === "en_attente" ? (
+                              <span className="text-sm font-semibold text-cuisine">Demande envoyée, en attente de réponse</span>
+                            ) : demande?.statut === "refusee" ? (
+                              <span className="text-sm font-semibold text-bad">Ton responsable compte sur toi : tu restes au planning.</span>
+                            ) : !passe ? (
+                              <BoutonAbsence token={token} creneauId={c.id} libelle={`${nomJour.toLowerCase()} ${NOM_SERVICE[c.service].toLowerCase()}`} />
+                            ) : null}
                           </div>
-                        ))}
-                        {siens.length > 1 && <span className="text-xs text-muted">Pause entre les deux services</span>}
-                        {siens.some((c) => c.poste !== employe.poste) && (
-                          <span className="text-xs text-muted">Poste : {siens.map((c) => NOM_POSTE[c.poste]).join(" puis ")}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="flex-1 font-semibold text-muted">Repos</span>
-                    )}
+                        );
+                      })}
+                      {liberes.map((d) => (
+                        <span key={d.id} className="rounded-lg bg-ok-bg px-2.5 py-1.5 text-sm font-semibold text-ok">
+                          {d.service ? NOM_SERVICE[d.service] : "Service"} : absence acceptée{d.remplacant ? `, ${d.remplacant} te remplace` : ""}
+                        </span>
+                      ))}
+                      {siens.length > 1 && <span className="text-xs text-muted">Pause entre les deux services</span>}
+                      {!siens.length && !liberes.length && <span className="pt-2 font-semibold text-muted">Repos</span>}
+                    </div>
                     {estAujourdhui && <span className="sr-only">(aujourd&apos;hui)</span>}
                   </li>
                 );

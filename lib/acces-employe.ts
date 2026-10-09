@@ -2,7 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TOKEN } from "@/lib/partage";
 import type { Creneau } from "@/lib/planning";
-import type { Employe, Restaurant } from "@/lib/types";
+import type { Employe, Poste, Restaurant, ServiceKey } from "@/lib/types";
 
 /**
  * Accès employé par lien personnel (sans compte).
@@ -27,10 +27,21 @@ export async function employeParToken(token: string) {
   };
 }
 
-export type SemaineEmploye = { id: string; date_lundi: string; creneaux: Creneau[] };
+export type AccesEmploye = NonNullable<Awaited<ReturnType<typeof employeParToken>>>;
+export type CreneauEmploye = Creneau & { id: string };
+export type DemandeEmploye = {
+  id: string;
+  creneau_id: string | null;
+  jour: number | null;
+  service: ServiceKey | null;
+  poste: Poste | null;
+  statut: "en_attente" | "acceptee" | "refusee";
+  remplacant: string | null;
+};
+export type SemaineEmploye = { id: string; date_lundi: string; creneaux: CreneauEmploye[]; demandes: DemandeEmploye[] };
 
-/** Les semaines PUBLIÉES de son restaurant à partir de ce lundi, avec seulement ses créneaux à lui. */
-export async function semainesPubliees(acces: NonNullable<Awaited<ReturnType<typeof employeParToken>>>, depuisLundi: string) {
+/** Les semaines PUBLIÉES de son restaurant à partir de ce lundi, avec seulement ses créneaux et ses demandes. */
+export async function semainesPubliees(acces: AccesEmploye, depuisLundi: string): Promise<SemaineEmploye[]> {
   const { admin, employe, restaurant } = acces;
   const { data: semaines } = await admin
     .from("semaines")
@@ -41,21 +52,28 @@ export async function semainesPubliees(acces: NonNullable<Awaited<ReturnType<typ
     .order("date_lundi")
     .limit(3);
   if (!semaines?.length) return [];
+  const ids = semaines.map((s) => s.id);
 
-  const { data: creneaux } = await admin
-    .from("creneaux")
-    .select("semaine_id, employe_id, jour, service, poste, debut, fin")
-    .eq("employe_id", employe.id)
-    .in("semaine_id", semaines.map((s) => s.id));
+  const [{ data: creneaux }, { data: demandes }] = await Promise.all([
+    admin.from("creneaux").select("id, semaine_id, employe_id, jour, service, poste, debut, fin").eq("employe_id", employe.id).in("semaine_id", ids),
+    admin.from("demandes").select("id, semaine_id, creneau_id, jour, service, poste, statut, remplacant:remplacant_id(nom)")
+      .eq("employe_id", employe.id).in("semaine_id", ids).order("created_at"),
+  ]);
 
-  return semaines.map((s): SemaineEmploye => ({
+  return semaines.map((s) => ({
     id: s.id,
     date_lundi: s.date_lundi,
     creneaux: (creneaux ?? [])
       .filter((c) => c.semaine_id === s.id)
       .map((c) => ({
-        employe_id: c.employe_id, jour: c.jour, service: c.service, poste: c.poste,
+        id: c.id, employe_id: c.employe_id, jour: c.jour, service: c.service, poste: c.poste,
         debut: c.debut.slice(0, 5), fin: c.fin.slice(0, 5),
-      }) as Creneau),
+      }) as CreneauEmploye),
+    demandes: (demandes ?? [])
+      .filter((d) => d.semaine_id === s.id)
+      .map((d) => ({
+        id: d.id, creneau_id: d.creneau_id, jour: d.jour, service: d.service, poste: d.poste, statut: d.statut,
+        remplacant: (d.remplacant as unknown as { nom: string } | null)?.nom ?? null,
+      }) as DemandeEmploye),
   }));
 }

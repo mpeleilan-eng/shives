@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getRestaurant } from "@/lib/session";
+import { getPatron, getRestaurant } from "@/lib/session";
 import { Message } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Accueil · Shives" };
@@ -17,11 +17,19 @@ export default async function Accueil({ searchParams }: PageProps<"/app">) {
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");
   const { bienvenue } = await searchParams;
+  const { supabase } = await getPatron();
+  const { count: enAttente } = await supabase.from("demandes").select("id", { count: "exact", head: true }).eq("statut", "en_attente");
 
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-3xl font-extrabold sm:text-4xl">Bonjour 👋</h1>
       {bienvenue && <Message type="ok">{restaurant.nom} est créé. Prochaine étape : ton équipe.</Message>}
+      {(enAttente ?? 0) > 0 && (
+        <Link href="/app/demandes" className="flex items-center justify-between gap-3 rounded-[18px] bg-bad-bg px-5 py-4 font-bold text-bad no-underline">
+          <span>{enAttente} {enAttente === 1 ? "absence à traiter" : "absences à traiter"}</span>
+          <span aria-hidden="true">→</span>
+        </Link>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {RACCOURCIS.map((r) =>
           r.pret ? (

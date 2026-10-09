@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  appliquerPause, calculerEtat, construireConfig, creneauxJournee, genererCreneaux, remplacerJournee, texteManque,
+  appliquerPause, calculerEtat, construireConfig, creneauxJournee, genererCreneaux, remplacantsPossibles, remplacerJournee, texteManque,
   type BesoinJour, type Creneau,
 } from "@/lib/planning";
 import { ajouterJours, estLundi, lundiDe, lundiProchain, titreSemaine } from "@/lib/dates";
@@ -120,5 +120,33 @@ describe("dates", () => {
   it("écrit le titre de la semaine", () => {
     expect(titreSemaine("2026-10-12")).toBe("Semaine du 12 octobre");
     expect(titreSemaine("2026-06-01")).toBe("Semaine du 1er juin");
+  });
+});
+
+describe("remplacantsPossibles", () => {
+  const cible = { jour: 1, service: "midi" as const, poste: "salle" as const };
+  const base: Creneau[] = [
+    { employe_id: "Sofia", jour: 1, service: "midi", poste: "salle", debut: "12:00", fin: "16:00" },
+    { employe_id: "Tom", jour: 1, service: "soir", poste: "salle", debut: "16:00", fin: "23:00" },
+  ];
+  const equipe = [...employes, emp("Nora", "polyvalent", 35), emp("Inès", "salle", 20, [1])];
+
+  it("propose le bon poste (ou polyvalent), disponible, pas déjà sur ce service", () => {
+    const noms = remplacantsPossibles(cible, "Sofia", base, equipe, besoins, regles, services).map((r) => r.employe.nom);
+    expect(noms).toContain("Tom");
+    expect(noms).toContain("Nora");
+    expect(noms).not.toContain("Inès"); // indisponible le mardi
+    expect(noms).not.toContain("Léa"); // cuisine
+    expect(noms).not.toContain("Sofia"); // l'absente
+  });
+
+  it("trie par heures restantes au contrat, ceux qui respectent les règles d'abord", () => {
+    const r = remplacantsPossibles(cible, "Sofia", base, equipe, besoins, regles, services);
+    // Nora (35 h, rien de prévu) passe avant Tom (24 h, déjà 7 h prévues)
+    expect(r[0].employe.nom).toBe("Nora");
+    expect(r[0].minutesRestantes).toBe(35 * 60);
+    const tom = r.find((x) => x.employe.nom === "Tom")!;
+    expect(tom.minutesRestantes).toBe(24 * 60 - 7 * 60);
+    expect(tom.problemes).toEqual([]);
   });
 });

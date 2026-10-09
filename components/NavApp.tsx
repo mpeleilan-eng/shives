@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 const LIENS = [
   { href: "/app", label: "Accueil" },
   { href: "/app/planning", label: "Planning" },
+  { href: "/app/demandes", label: "Demandes" },
   { href: "/app/equipe", label: "Équipe" },
   { href: "/app/besoins", label: "Besoins" },
   { href: "/app/restaurant", label: "Restaurant" },
 ];
 
 /** Onglets de l'espace patron. L'onglet de la page en cours est souligné. */
-export function NavApp() {
+export function NavApp({ demandesEnAttente = 0 }: { demandesEnAttente?: number }) {
   const chemin = usePathname();
   return (
     <nav aria-label="Espace patron" className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2">
@@ -23,9 +24,14 @@ export function NavApp() {
             key={l.href}
             href={l.href}
             aria-current={actif ? "page" : undefined}
-            className={`whitespace-nowrap border-b-[3px] px-3 pb-2 pt-1 text-sm font-bold no-underline ${actif ? "border-blue text-ink" : "border-transparent text-muted hover:text-ink"}`}
+            className={`flex items-center gap-1.5 whitespace-nowrap border-b-[3px] px-3 pb-2 pt-1 text-sm font-bold no-underline ${actif ? "border-blue text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
             {l.label}
+            {l.href === "/app/demandes" && demandesEnAttente > 0 && (
+              <span className="rounded-full bg-bad px-1.5 text-xs leading-5 text-white" aria-label={`${demandesEnAttente} en attente`}>
+                {demandesEnAttente}
+              </span>
+            )}
           </Link>
         );
       })}
