@@ -25,15 +25,15 @@ export default function Image() {
           background: "#F5F6F9",
           fontFamily: "sans-serif",
           padding: "60px 64px",
-          gap: 48,
+          gap: 40,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: 560 }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: 500 }}>
           <div style={{ display: "flex", fontSize: 52, fontWeight: 800, color: "#0E131A" }}>
             Shives<span style={{ color: "#F2A93B" }}>.</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#1F4FC9", letterSpacing: 1 }}>
+            <div style={{ fontSize: 21, fontWeight: 700, color: "#1F4FC9", letterSpacing: 1 }}>
               PLANNING POUR RESTAURANTS INDÉPENDANTS
             </div>
             <div style={{ fontSize: 62, fontWeight: 800, color: "#0E131A", lineHeight: 1.08, marginTop: 18 }}>
@@ -64,18 +64,18 @@ export default function Image() {
               Effectifs complets
             </div>
           </div>
-          <div style={{ display: "flex", marginLeft: 86, marginBottom: 8 }}>
+          <div style={{ display: "flex", marginLeft: 76, marginBottom: 8 }}>
             {JOURS.map((j) => (
-              <div key={j} style={{ width: 70, fontSize: 17, color: "#6B7280", display: "flex", justifyContent: "center" }}>
+              <div key={j} style={{ width: 58, fontSize: 17, color: "#6B7280", display: "flex", justifyContent: "center" }}>
                 {j}
               </div>
             ))}
           </div>
           {EQUIPE.map(([nom, jours]) => (
             <div key={nom} style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ width: 86, fontSize: 19, fontWeight: 600, color: "#0E131A" }}>{nom}</div>
+              <div style={{ width: 76, fontSize: 19, flexShrink: 0, fontWeight: 600, color: "#0E131A" }}>{nom}</div>
               {jours.map((c, i) => (
-                <div key={i} style={{ width: 70, display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
+                <div key={i} style={{ width: 58, flexShrink: 0, display: "flex", flexDirection: "column", gap: 4, padding: "0 4px" }}>
                   <div style={{ height: 18, borderRadius: 6, background: c.includes("M") ? "#1F4FC9" : "#EEF1F6" }} />
                   <div style={{ height: 18, borderRadius: 6, background: c.includes("S") ? "#F2A93B" : "#EEF1F6" }} />
                 </div>
