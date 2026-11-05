@@ -14,10 +14,22 @@ const figtree = Figtree({
   weight: ["400", "500", "600", "700"],
 });
 
+const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || (vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000"),
+  ),
   title: "Shives · Logiciel de planning pour restaurants indépendants",
   description:
     "Shives crée le planning de ton restaurant en un clic : contrats respectés, repos garantis, effectifs midi et soir. Ton équipe le reçoit sur son téléphone, sans appli.",
+  openGraph: {
+    title: "Shives · Le planning de ton resto, fait en un clic",
+    description: "Contrats respectés, repos garantis, effectifs midi et soir. Ton équipe le reçoit sur son téléphone, sans appli.",
+    locale: "fr_FR",
+    type: "website",
+    siteName: "Shives",
+  },
 };
 
 export const viewport: Viewport = {
