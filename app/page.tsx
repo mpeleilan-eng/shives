@@ -198,18 +198,18 @@ export default function Home() {
             <div className="plans">
               <div className="plan">
                 <div className="top"><h3>Solo</h3></div>
-                <div className="price">19 €<small> / mois HT</small></div>
+                <div className="price">19 €<small> / mois</small></div>
                 <ul><li>Jusqu&apos;à 8 salariés</li><li>Planning généré en un clic</li><li>Lien personnel pour chaque employé</li><li>Absences et remplacements</li></ul>
                 <a className="btn ghost" href="#demo">Demander une démo</a>
               </div>
               <div className="plan best">
                 <div className="top"><h3>Équipe</h3><span className="tag">Le plus choisi</span></div>
-                <div className="price">39 €<small> / mois HT</small></div>
+                <div className="price">39 €<small> / mois</small></div>
                 <ul><li>Jusqu&apos;à 20 salariés</li><li>Tout ce qu&apos;il y a dans Solo</li><li>Bientôt : export des heures pour la paie</li><li>Plusieurs plannings types</li></ul>
                 <a className="btn primary" href="#demo">Demander une démo</a>
               </div>
             </div>
-            <p className="note">Premier mois offert. Sans engagement, résiliable à tout moment.</p>
+            <p className="note">Premier mois offert. Sans engagement, résiliable à tout moment.<br />TVA non applicable, art. 293 B du CGI.</p>
           </div>
         </section>
 

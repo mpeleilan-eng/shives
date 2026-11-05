@@ -71,7 +71,7 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
                   {o === "equipe" && <span className="rounded-full bg-blue px-2.5 py-1 text-xs font-bold text-on-blue">Le plus choisi</span>}
                 </div>
                 <p className="m-0 font-display text-5xl font-extrabold tracking-tight">
-                  {OFFRES[o].prix} €<small className="font-sans text-base font-semibold text-muted"> / mois HT</small>
+                  {OFFRES[o].prix} €<small className="font-sans text-base font-semibold text-muted"> / mois</small>
                 </p>
                 <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
                   {OFFRES[o].points.map((p) => <li key={p} className="flex gap-2"><span className="text-ok">✓</span>{p}</li>)}
@@ -87,7 +87,11 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
         </div>
       )}
 
-      <p className="m-0 text-xs text-muted">Paiement sécurisé par Stripe. Shives ne voit jamais ta carte bancaire.</p>
+      <p className="m-0 text-xs text-muted">
+        Prix mensuels, sans engagement. TVA non applicable, art. 293 B du CGI.
+        <br />
+        Paiement sécurisé par Stripe. Shives ne voit jamais ta carte bancaire.
+      </p>
     </div>
   );
 }
