@@ -15,6 +15,14 @@ export function stripeConfigure() {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_SOLO && process.env.STRIPE_PRICE_EQUIPE);
 }
 
+/**
+ * Paiement en ligne ouvert aux patrons ? Fermé par défaut (phase de lancement / bêta gratuite).
+ * Pour l'ouvrir : variable PAIEMENT_OUVERT=oui (avec les clés Stripe « live »).
+ */
+export function paiementOuvert() {
+  return stripeConfigure() && process.env.PAIEMENT_OUVERT === "oui";
+}
+
 export function prixStripe(): Record<Offre, string | undefined> {
   return { solo: process.env.STRIPE_PRICE_SOLO, equipe: process.env.STRIPE_PRICE_EQUIPE };
 }

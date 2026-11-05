@@ -61,8 +61,8 @@ async function appliquer(abonnement: Stripe.Subscription, restaurantIdSession: s
 
   const admin = createAdminClient();
   const requete = admin.from("restaurants").update({ abonnement: valeur, stripe_customer_id: client });
-  const { error } = restaurantId
-    ? await requete.eq("id", restaurantId)
-    : await requete.eq("stripe_customer_id", client);
+  const cible = restaurantId ? requete.eq("id", restaurantId) : requete.eq("stripe_customer_id", client);
+  // Un resto fondateur (bêta gratuite) ne perd pas son accès à cause d'un abonnement Stripe arrêté
+  const { error } = valeur === "inactif" ? await cible.neq("abonnement", "beta") : await cible;
   if (error) throw new Error(error.message);
 }

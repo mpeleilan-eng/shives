@@ -104,7 +104,7 @@ export async function publierSemaine(dateLundi: string, publier: boolean): Promi
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");
   if (publier && !abonnementActif(restaurant.abonnement)) {
-    return { erreur: "Pour publier, choisis une offre dans Abonnement (le premier mois est offert)." };
+    return { erreur: "Pour publier, active ton accès dans l'onglet Abonnement." };
   }
   if (publier) {
     const { count } = await supabase.from("employes").select("id", { count: "exact", head: true })

@@ -38,7 +38,8 @@ export type Restaurant = {
   nom: string;
   services: Services;
   regles: Regles;
-  abonnement: "essai" | "solo" | "equipe" | "inactif";
+  /** beta = resto fondateur, accès gratuit pendant le lancement */
+  abonnement: "essai" | "beta" | "solo" | "equipe" | "inactif";
   stripe_customer_id: string | null;
   created_at: string;
 };

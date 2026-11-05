@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { abonnementActif, JOURS_OFFERTS, maxEmployes, OFFRES, type Offre } from "@/lib/abonnement";
-import { stripeConfigure } from "@/lib/stripe";
+import { paiementOuvert } from "@/lib/stripe";
 import { Carte, Message } from "@/components/ui";
-import { BoutonGerer, BoutonOffre } from "./BoutonsAbonnement";
+import { BoutonDemanderAcces, BoutonGerer, BoutonOffre } from "./BoutonsAbonnement";
 
 export const metadata: Metadata = { title: "Abonnement · Shives" };
 
@@ -17,9 +17,16 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
   const { count } = await supabase.from("employes").select("id", { count: "exact", head: true })
     .eq("restaurant_id", restaurant.id).eq("actif", true);
   const actif = abonnementActif(restaurant.abonnement);
-  const offreActuelle = actif ? (restaurant.abonnement as Offre) : null;
+  const beta = restaurant.abonnement === "beta";
+  const offreActuelle: Offre | null = restaurant.abonnement === "solo" || restaurant.abonnement === "equipe" ? restaurant.abonnement : null;
   const dejaClient = Boolean(restaurant.stripe_customer_id);
+  const paiement = paiementOuvert();
   const nbEmployes = count ?? 0;
+
+  const titreOffre = beta
+    ? "Resto fondateur"
+    : offreActuelle ? OFFRES[offreActuelle].nom
+    : restaurant.abonnement === "inactif" ? "Abonnement arrêté" : "Pas encore d'abonnement";
 
   return (
     <div className="flex flex-col gap-5">
@@ -31,28 +38,31 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
       {retour === "ok" && !actif && (
         <Message type="ok">Paiement reçu ! L&apos;activation prend quelques secondes : recharge la page.</Message>
       )}
-      {retour === "ok" && actif && <Message type="ok">C&apos;est tout bon : ton abonnement {OFFRES[offreActuelle!].nom} est actif.</Message>}
+      {retour === "ok" && offreActuelle && <Message type="ok">C&apos;est tout bon : ton abonnement {OFFRES[offreActuelle].nom} est actif.</Message>}
       {retour === "annule" && <Message type="erreur">Paiement annulé. Tu peux recommencer quand tu veux.</Message>}
-      {!stripeConfigure() && <Message type="erreur">Le paiement n&apos;est pas encore configuré (clés Stripe manquantes).</Message>}
 
       <Carte className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="text-sm font-semibold text-muted">Ton offre</span>
-            <p className="m-0 font-display text-2xl font-extrabold">
-              {offreActuelle ? OFFRES[offreActuelle].nom : restaurant.abonnement === "inactif" ? "Abonnement arrêté" : "Pas encore d'abonnement"}
-            </p>
+            <p className="m-0 font-display text-2xl font-extrabold">{titreOffre}</p>
             <span className="text-sm text-muted">{nbEmployes} / {maxEmployes(restaurant.abonnement)} salariés actifs</span>
           </div>
-          {dejaClient && <BoutonGerer />}
+          {dejaClient && paiement && <BoutonGerer />}
         </div>
-        {actif && nbEmployes > maxEmployes(restaurant.abonnement) && (
+        {beta && (
+          <p className="m-0 rounded-xl bg-ok-bg px-3.5 py-3 text-sm text-ok">
+            Merci de faire partie des premiers restos ! Tout Shives est <b>gratuit</b> pendant le lancement.
+            Tu seras prévenu bien avant la fin de la période gratuite.
+          </p>
+        )}
+        {offreActuelle && nbEmployes > maxEmployes(restaurant.abonnement) && (
           <Message type="erreur">
-            Tu as {nbEmployes} salariés actifs, ton offre {OFFRES[offreActuelle!].nom} va jusqu&apos;à {maxEmployes(restaurant.abonnement)}.
+            Tu as {nbEmployes} salariés actifs, ton offre {OFFRES[offreActuelle].nom} va jusqu&apos;à {maxEmployes(restaurant.abonnement)}.
             Tu ne peux plus publier : passe à l&apos;offre Équipe avec « Gérer mon abonnement », ou retire quelqu&apos;un de l&apos;équipe.
           </Message>
         )}
-        {!actif && (
+        {!actif && paiement && (
           <p className="m-0 rounded-xl bg-blue-soft px-3.5 py-3 text-sm">
             Tu peux préparer tes plannings librement. Pour <b>publier</b> et envoyer les liens à ton équipe, choisis une offre
             {dejaClient ? "." : ` : le premier mois est offert (${JOURS_OFFERTS} jours), tu ne paies rien avant.`}
@@ -60,7 +70,24 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
         )}
       </Carte>
 
-      {!actif && (
+      {/* Phase de lancement : pas de paiement en ligne, accès gratuit sur demande */}
+      {!actif && !paiement && (
+        <Carte className="flex flex-col gap-3 border-2! border-blue!">
+          <span className="self-start rounded-full bg-blue px-3 py-1 text-xs font-bold text-on-blue">Lancement</span>
+          <h2 className="text-2xl font-bold">Deviens resto fondateur : c&apos;est gratuit</h2>
+          <p className="m-0 text-muted">
+            Shives démarre. Les premiers restos l&apos;utilisent <b className="text-ink">gratuitement</b> pour nous aider à l&apos;améliorer :
+            publication du planning, liens pour l&apos;équipe, absences et remplacements, tout est inclus.
+          </p>
+          <BoutonDemanderAcces />
+          <p className="m-0 text-xs text-muted">
+            Après le lancement : Solo {OFFRES.solo.prix} €/mois (jusqu&apos;à {OFFRES.solo.maxEmployes} salariés) ou Équipe {OFFRES.equipe.prix} €/mois
+            (jusqu&apos;à {OFFRES.equipe.maxEmployes}). Rien ne sera prélevé sans ton accord.
+          </p>
+        </Carte>
+      )}
+
+      {!actif && paiement && (
         <div className="grid gap-4 sm:grid-cols-2">
           {(["solo", "equipe"] as const).map((o) => {
             const trop = nbEmployes > OFFRES[o].maxEmployes;
@@ -89,8 +116,12 @@ export default async function PageAbonnement({ searchParams }: PageProps<"/app/a
 
       <p className="m-0 text-xs text-muted">
         Prix mensuels, sans engagement. TVA non applicable, art. 293 B du CGI.
-        <br />
-        Paiement sécurisé par Stripe. Shives ne voit jamais ta carte bancaire.
+        {paiement && (
+          <>
+            <br />
+            Paiement sécurisé par Stripe. Shives ne voit jamais ta carte bancaire.
+          </>
+        )}
       </p>
     </div>
   );

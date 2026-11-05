@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { abonnementActif, abonnementDepuisStripe, maxEmployes, offrePourPrix } from "@/lib/abonnement";
+import { abonnementActif, abonnementDepuisStripe, maxEmployes, offrePourPrix, tranche } from "@/lib/abonnement";
 
 const prix = { solo: "price_solo", equipe: "price_equipe" };
 
@@ -31,5 +31,20 @@ describe("abonnement", () => {
     expect(abonnementActif("essai")).toBe(false);
     expect(abonnementActif("inactif")).toBe(false);
     expect(abonnementActif("solo")).toBe(true);
+  });
+});
+
+describe("bêta restos fondateurs", () => {
+  it("donne un accès complet et gratuit (publication, 20 salariés)", () => {
+    expect(abonnementActif("beta")).toBe(true);
+    expect(maxEmployes("beta")).toBe(20);
+  });
+
+  it("range le nombre de salariés dans la bonne tranche", () => {
+    expect(tranche(0)).toBe("1 à 5");
+    expect(tranche(5)).toBe("1 à 5");
+    expect(tranche(6)).toBe("6 à 10");
+    expect(tranche(15)).toBe("11 à 15");
+    expect(tranche(16)).toBe("Plus de 15");
   });
 });

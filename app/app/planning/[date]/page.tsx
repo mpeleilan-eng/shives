@@ -13,6 +13,7 @@ import { BoutonsGeneration } from "../BoutonsGeneration";
 import { BoutonPublier } from "../BoutonPublier";
 import { CopierDepuis, DupliquerVers } from "../CopierSemaine";
 import { abonnementActif } from "@/lib/abonnement";
+import { paiementOuvert } from "@/lib/stripe";
 import { styleBouton } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Planning · Shives" };
@@ -97,7 +98,9 @@ export default async function PageSemaine({ params }: PageProps<"/app/planning/[
               {publiee || abonnementActif(restaurant.abonnement) ? (
                 <BoutonPublier dateLundi={date} publiee={publiee} nbManques={nbManques} />
               ) : (
-                <Link href="/app/abonnement" className={styleBouton.primaire}>Publier : 1er mois offert</Link>
+                <Link href="/app/abonnement" className={styleBouton.primaire}>
+                  {paiementOuvert() ? "Publier : 1er mois offert" : "Publier : accès gratuit"}
+                </Link>
               )}
             </div>
             {publiee && (

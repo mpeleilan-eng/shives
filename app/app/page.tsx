@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
 import { abonnementActif } from "@/lib/abonnement";
+import { paiementOuvert } from "@/lib/stripe";
 import { Message } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Accueil · Shives" };
@@ -27,7 +28,13 @@ export default async function Accueil({ searchParams }: PageProps<"/app">) {
       {bienvenue && <Message type="ok">{restaurant.nom} est créé. Prochaine étape : ton équipe.</Message>}
       {!abonnementActif(restaurant.abonnement) && (
         <Link href="/app/abonnement" className="flex items-center justify-between gap-3 rounded-[18px] bg-blue-soft px-5 py-4 font-bold text-blue no-underline">
-          <span>{restaurant.abonnement === "inactif" ? "Ton abonnement est arrêté : réactive-le pour publier" : "Publie tes plannings : ton 1er mois est offert"}</span>
+          <span>
+            {restaurant.abonnement === "inactif"
+              ? "Ton abonnement est arrêté : réactive-le pour publier"
+              : paiementOuvert()
+                ? "Publie tes plannings : ton 1er mois est offert"
+                : "Publie tes plannings : demande ton accès gratuit"}
+          </span>
           <span aria-hidden="true">→</span>
         </Link>
       )}

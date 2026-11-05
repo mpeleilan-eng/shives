@@ -3,7 +3,7 @@
 import type { Restaurant } from "@/lib/types";
 
 export type Offre = "solo" | "equipe";
-export type Abonnement = Restaurant["abonnement"]; // "essai" | "solo" | "equipe" | "inactif"
+export type Abonnement = Restaurant["abonnement"]; // "essai" | "beta" | "solo" | "equipe" | "inactif"
 
 export const OFFRES: Record<Offre, { nom: string; prix: number; maxEmployes: number; points: string[] }> = {
   solo: {
@@ -22,14 +22,22 @@ export const OFFRES: Record<Offre, { nom: string; prix: number; maxEmployes: num
 
 export const JOURS_OFFERTS = 30;
 
-/** Limite d'employés actifs. Sans abonnement (essai), on laisse préparer jusqu'à 20 personnes. */
+/** Limite d'employés actifs. Sans abonnement (essai) ou en bêta, jusqu'à 20 personnes. */
 export function maxEmployes(abonnement: Abonnement) {
   return abonnement === "solo" ? OFFRES.solo.maxEmployes : OFFRES.equipe.maxEmployes;
 }
 
-/** Publier et partager avec l'équipe demande un abonnement en cours (période offerte comprise). */
+/** Publier et partager avec l'équipe demande un abonnement en cours (période offerte et bêta comprises). */
 export function abonnementActif(abonnement: Abonnement) {
-  return abonnement === "solo" || abonnement === "equipe";
+  return abonnement === "solo" || abonnement === "equipe" || abonnement === "beta";
+}
+
+/** Nombre de salariés → tranche du formulaire de démo. */
+export function tranche(nbEmployes: number) {
+  if (nbEmployes <= 5) return "1 à 5";
+  if (nbEmployes <= 10) return "6 à 10";
+  if (nbEmployes <= 15) return "11 à 15";
+  return "Plus de 15";
 }
 
 /** Quelle offre correspond à ce prix Stripe ? */

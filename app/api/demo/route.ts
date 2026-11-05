@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { verifierDemande } from "@/lib/demo";
+import { alerterNouvelleDemande } from "@/lib/alerte";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -23,5 +24,7 @@ export async function POST(request: Request) {
     console.error("demandes_demo insert:", error.message);
     return NextResponse.json({ erreur: "L'envoi a échoué. Réessaie dans un instant." }, { status: 500 });
   }
+  // E-mail d'alerte envoyé après la réponse : le visiteur n'attend pas
+  after(() => alerterNouvelleDemande(verif.demande, "démo"));
   return NextResponse.json({ ok: true }, { status: 201 });
 }

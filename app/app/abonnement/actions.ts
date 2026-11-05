@@ -2,16 +2,56 @@
 
 import { redirect } from "next/navigation";
 import { getPatron, getRestaurant } from "@/lib/session";
-import { JOURS_OFFERTS, type Offre } from "@/lib/abonnement";
-import { prixStripe, stripe, stripeConfigure } from "@/lib/stripe";
+import { after } from "next/server";
+import { JOURS_OFFERTS, tranche, type Offre } from "@/lib/abonnement";
+import { paiementOuvert, prixStripe, stripe } from "@/lib/stripe";
 import { siteUrl } from "@/lib/site-url";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { alerterNouvelleDemande } from "@/lib/alerte";
+import { TAILLES, type DemandeDemo } from "@/lib/demo";
 
-export type EtatAbonnement = { erreur?: string };
+export type EtatAbonnement = { erreur?: string; demandeEnvoyee?: boolean };
+
+/**
+ * Phase de lancement : le patron demande l'accès gratuit « resto fondateur ».
+ * La demande est enregistrée (demandes_demo) et le créateur de Shives reçoit un e-mail ;
+ * il active ensuite le resto avec « npm run beta ».
+ */
+export async function demanderAcces(): Promise<EtatAbonnement> {
+  const { user, supabase } = await getPatron();
+  const restaurant = await getRestaurant();
+  if (!restaurant) redirect("/app/restaurant");
+  if (!user.email) return { erreur: "Adresse e-mail introuvable." };
+
+  const { count } = await supabase.from("employes").select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurant.id).eq("actif", true);
+  const taille = tranche(count ?? 0) as (typeof TAILLES)[number];
+  const demande: DemandeDemo = {
+    prenom: user.email.split("@")[0].slice(0, 60),
+    restaurant: restaurant.nom.slice(0, 100),
+    ville: "",
+    taille,
+    contact: user.email.slice(0, 120),
+  };
+
+  const admin = createAdminClient();
+  // Pas de doublon : une demande par adresse e-mail suffit
+  const { data: deja } = await admin.from("demandes_demo").select("id").eq("contact", demande.contact).limit(1);
+  if (!deja?.length) {
+    const { error } = await admin.from("demandes_demo").insert(demande);
+    if (error) {
+      console.error("demanderAcces:", error.message);
+      return { erreur: "La demande n'a pas pu être envoyée. Réessaie." };
+    }
+    after(() => alerterNouvelleDemande(demande, "accès bêta"));
+  }
+  return { demandeEnvoyee: true };
+}
 
 /** Ouvre la page de paiement Stripe Checkout pour l'offre choisie (1er mois offert au premier abonnement). */
 export async function choisirOffre(offre: Offre): Promise<EtatAbonnement> {
   if (offre !== "solo" && offre !== "equipe") return { erreur: "Offre inconnue." };
-  if (!stripeConfigure()) return { erreur: "Le paiement n'est pas encore configuré." };
+  if (!paiementOuvert()) return { erreur: "Le paiement en ligne n'est pas encore ouvert : demande ton accès gratuit." };
   const { user } = await getPatron();
   const restaurant = await getRestaurant();
   if (!restaurant) redirect("/app/restaurant");

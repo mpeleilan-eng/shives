@@ -3,7 +3,32 @@
 import { useState, useTransition } from "react";
 import { Bouton, Message } from "@/components/ui";
 import type { Offre } from "@/lib/abonnement";
-import { choisirOffre, gererAbonnement } from "./actions";
+import { choisirOffre, demanderAcces, gererAbonnement } from "./actions";
+
+export function BoutonDemanderAcces() {
+  const [enCours, startTransition] = useTransition();
+  const [erreur, setErreur] = useState<string>();
+  const [envoyee, setEnvoyee] = useState(false);
+  if (envoyee) {
+    return <Message type="ok">C&apos;est envoyé ! Tu seras recontacté très vite pour activer ton accès.</Message>;
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <Bouton
+        disabled={enCours}
+        className="w-full sm:w-auto sm:self-start"
+        onClick={() => startTransition(async () => {
+          const r = await demanderAcces();
+          if (r.erreur) setErreur(r.erreur);
+          else setEnvoyee(true);
+        })}
+      >
+        {enCours ? "Envoi…" : "Demander mon accès gratuit"}
+      </Bouton>
+      {erreur && <Message type="erreur">{erreur}</Message>}
+    </div>
+  );
+}
 
 export function BoutonOffre({ offre, label, principal }: { offre: Offre; label: string; principal?: boolean }) {
   const [enCours, startTransition] = useTransition();
