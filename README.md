@@ -124,6 +124,15 @@ Carte de test : `4242 4242 4242 4242`, une date future, n'importe quel CVC.
 | `npm run lint` | Vérifie la qualité du code |
 | `npm run build` | Vérifie que tout compile, comme sur Vercel |
 | `npm run lien -- ton@email.fr` | **Local uniquement** : lien de connexion sans e-mail (si la limite d'e-mails de Supabase est atteinte) |
+| `npm run beta` | Liste des restos et de leur accès |
+| `npm run beta -- patron@resto.fr` | Active l'accès gratuit « resto fondateur » (ajouter `non` à la fin pour le retirer) |
+
+## Phase de lancement (bêta gratuite)
+
+- Tant que `PAIEMENT_OUVERT` n'est pas à `oui`, le paiement en ligne est caché : les patrons voient « Deviens resto fondateur : c'est gratuit » et peuvent demander leur accès.
+- Chaque demande (démo ou accès) envoie un e-mail d'alerte via Brevo (`BREVO_API_KEY`, `ALERTE_EMAIL`, `ALERTE_EXPEDITEUR`).
+- Tu actives les restos choisis avec `npm run beta -- patron@resto.fr`.
+- Une tâche Vercel (`vercel.json` → `/api/reveil`) lit la base chaque jour à 6 h pour éviter la mise en pause automatique de Supabase (offre gratuite).
 
 ## Mettre en ligne (Vercel)
 
